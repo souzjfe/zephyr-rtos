@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "__assert.h": "c",
+        "toolchain.h": "c",
+        "gpio.h": "c",
+        "device.h": "c",
+        "kernel.h": "c",
+        "kernel_includes.h": "c",
+        "syscall.h": "c",
+        "kobject.h": "c",
+        "log.h": "c",
+        "shell.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": true
+}

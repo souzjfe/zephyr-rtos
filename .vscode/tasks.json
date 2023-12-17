@@ -1,0 +1,47 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "West Build",
+			"type": "shell",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"linux": {
+				"command": "${userHome}/Developments/zephyr_app/build.sh"
+			},
+			"windows": {
+				
+			},
+			"osx": {
+				"command": "${userHome}/Developments/zephyr_app/build.sh"
+			},
+			"args": [
+
+			],
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"label": "West Flash",
+			"type": "shell",
+			"linux": {
+				"command": "~/Developments/zephyr_app/flash.sh"
+			},
+			"windows": {
+				
+			},
+			"osx": {
+				
+			},
+			"args": [
+				"flash"
+			],
+			"problemMatcher": [
+				"$gcc"
+			]
+		}
+	]
+}
