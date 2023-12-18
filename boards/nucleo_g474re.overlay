@@ -21,5 +21,10 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+	zephyr,user {
+		dac = <&dac1>;
+		dac-channel-id = <1>;
+		dac-resolution = <12>;
+	};
 };
 

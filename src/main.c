@@ -1,66 +1,75 @@
+/*
+ * Copyright (c) 2020 Libre Solar Technologies GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "lib.h"
-#include <stdint.h>
-
 #include <zephyr/kernel.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/sys/util_macro.h>
-#include <zephyr/zbus/zbus.h>
-// LOG_MODULE_DECLARE(zbus, CONFIG_ZBUS_LOG_LEVEL);
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/dac.h>
 
-// ZBUS_CHAN_DEFINE(button_data_chan,  /* Name */
-//                  struct sensor_msg, /* Message type */
+#define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
 
-//                  NULL,                                /* Validator */
-//                  NULL,                                /* User data */
-//                  ZBUS_OBSERVERS(thread_handler1_sub), /* observers */
-//                  ZBUS_MSG_INIT(0)                     /* Initial value {0} */
-// );
+#if (DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac) && \
+	DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac_channel_id) && \
+	DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac_resolution))
+#define DAC_NODE DT_PHANDLE(ZEPHYR_USER_NODE, dac)
+#define DAC_CHANNEL_ID DT_PROP(ZEPHYR_USER_NODE, dac_channel_id)
+#define DAC_RESOLUTION DT_PROP(ZEPHYR_USER_NODE, dac_resolution)
+#else
+#error "Unsupported board: see README and check /zephyr,user node"
+#define DAC_NODE DT_INVALID_NODE
+#define DAC_CHANNEL_ID 0
+#define DAC_RESOLUTION 0
+#endif
 
-// static void fh1_cb(const struct zbus_channel *chan) {
-//   const struct sensor_msg *msg = zbus_chan_const_msg(chan);
+static const struct device *const dac_dev = DEVICE_DT_GET(DAC_NODE);
 
-//   LOG_INF("Sensor msg processed by CALLBACK fh1: %u", msg->count);
-// }
-// ZBUS_LISTENER_DEFINE(fast_handler1_lis, fh1_cb);
-// struct sensor_wq_info {
-//   struct k_work work;
-//   const struct zbus_channel *chan;
-//   uint8_t handle;
-// };
-// static struct sensor_wq_info wq_handler1 = {.handle = 1};
-// static void wq_dh_cb(struct k_work *item) {
-//   struct sensor_msg msg;
-//   struct sensor_wq_info *sens = CONTAINER_OF(item, struct sensor_wq_info,
-//   work);
+static const struct dac_channel_cfg dac_ch_cfg = {
+	.channel_id  = DAC_CHANNEL_ID,
+	.resolution  = DAC_RESOLUTION,
+	.buffered = true
+};
 
-//   zbus_chan_read(sens->chan, &msg, K_MSEC(200));
-//   LOG_INF("Sensor msg processed by WORK QUEUE handler dh: %u", msg.count);
-// }
-// static void dh1_cb(const struct zbus_channel *chan) {
-//   wq_handler1.chan = chan;
+int main(void)
+{
+	if (!device_is_ready(dac_dev)) {
+		printk("DAC device %s is not ready\n", dac_dev->name);
+		return 0;
+	}
 
-//   k_work_submit(&wq_handler1.work);
-// }
-// ZBUS_LISTENER_DEFINE(delay_handler1_lis, dh1_cb);
-int main() {
-  /* code */
-  // k_work_init(&wq_handler1.work, wq_dh_cb);
+	int ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
 
-  return 0;
+	if (ret != 0) {
+		printk("Setting up of DAC channel failed with code %d\n", ret);
+		return 0;
+	}
+
+	printk("Generating sawtooth signal at DAC channel %d.\n",
+		DAC_CHANNEL_ID);
+	while (1) {
+		/* Number of valid DAC values, e.g. 4096 for 12-bit DAC */
+		const int dac_values = 1U << DAC_RESOLUTION;
+
+		/*
+		 * 1 msec sleep leads to about 4 sec signal period for 12-bit
+		 * DACs. For DACs with lower resolution, sleep time needs to
+		 * be increased.
+		 * Make sure to sleep at least 1 msec even for future 16-bit
+		 * DACs (lowering signal frequency).
+		 */
+		const int sleep_time = 4096 / dac_values > 0 ?
+			4096 / dac_values : 1;
+
+		for (int i = 0; i < dac_values; i++) {
+			ret = dac_write_value(dac_dev, DAC_CHANNEL_ID, i);
+			printk("DAC value: %d\n", i);
+			if (ret != 0) {
+				printk("dac_write_value() failed with code %d\n", ret);
+				return 0;
+			}
+			k_sleep(K_MSEC(sleep_time));
+		}
+	}
+	return 0;
 }
-// ZBUS_SUBSCRIBER_DEFINE(thread_handler1_sub, 4);
-
-// static void thread_handler1_task(void) {
-//   const struct zbus_channel *chan;
-
-//   while (!zbus_sub_wait(&thread_handler1_sub, &chan, K_FOREVER)) {
-//     struct sensor_msg msg;
-
-//     zbus_chan_read(chan, &msg, K_MSEC(200));
-
-//     LOG_INF("Sensor msg processed by THREAD handler dh: %u", msg.count);
-//   }
-// }
-
-// K_THREAD_DEFINE(thread_handler1_id, 1024, thread_handler1_task, NULL, NULL,
-//                 NULL, 7, 0, 0);
