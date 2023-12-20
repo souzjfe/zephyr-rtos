@@ -9,7 +9,7 @@
 
 // configs que geravam warn nas threads
 #define ARCH_STACK_PTR_ALIGN 8
-#define CONFIG_SYS_CLOCK_TICKS_PER_SEC 100
+#define CONFIG_SYS_CLOCK_TICKS_PER_SEC 1000
 // configs que geravam warn no zbus
 #define CONFIG_NUM_PREEMPT_PRIORITIES 15
 

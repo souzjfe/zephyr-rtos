@@ -10,17 +10,6 @@ ZBUS_CHAN_DEFINE(sensor_data_chan, u_int32_t, NULL, NULL,
                  ZBUS_OBSERVERS(listener_example), /* observers */
                  ZBUS_MSG_INIT(0)                  /* Initial value {0} */
 );
-static int cmd_led(const struct shell *shell, size_t argc, char **argv) {
-  ARG_UNUSED(argc);
-  ARG_UNUSED(argv);
-
-  shell_print(shell, "Ligar LED\n");
-
-  k_msleep(200);
-  return 0;
-}
-
-SHELL_CMD_ARG_REGISTER(led, NULL, "Description: Pisca um Led", cmd_led, 1, 0);
 
 static void cmd_demo_on(const struct shell *shell, size_t argc, char **argv) {
   uint32_t sm = 14;
